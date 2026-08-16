@@ -11,18 +11,16 @@ if [ -f "$FLAG" ]; then
     exit 0
 fi
 
-# ── Resolve root block device ───────────────────────────────────────────────
 ROOT_DEV=$(findmnt -n -o SOURCE /)
 ROOT_DEV_NAME="${ROOT_DEV#/dev/}"
-
-if [[ "$ROOT_DEV_NAME" =~ ^(mmcblk[0-9]+)p([0-9]+)$ ]]; then
-    DISK_NAME="${BASH_REMATCH[1]}"
-    PART_NUM="${BASH_REMATCH[2]}"
-elif [[ "$ROOT_DEV_NAME" =~ ^([a-z]+)([0-9]+)$ ]]; then
-    DISK_NAME="${BASH_REMATCH[1]}"
-    PART_NUM="${BASH_REMATCH[2]}"
-else
-    echo "expand-rootfs: cannot parse device '$ROOT_DEV', aborting." >&2
+DISK_NAME=$(lsblk -ndo PKNAME "/dev/${ROOT_DEV_NAME}" 2>/dev/null || echo "")
+if [[ -z "${DISK_NAME}" ]]; then
+    echo "expand-rootfs: cannot determine parent disk for '$ROOT_DEV'." >&2
+    exit 1
+fi
+PART_NUM=$(cat "/sys/class/block/${ROOT_DEV_NAME}/partition" 2>/dev/null || echo "")
+if [[ -z "${PART_NUM}" ]]; then
+    echo "expand-rootfs: cannot determine partition number for '$ROOT_DEV'." >&2
     exit 1
 fi
 
@@ -31,7 +29,6 @@ DISK_DEV="/dev/$DISK_NAME"
 echo "expand-rootfs: resizing partition $PART_NUM on $DISK_DEV ..."
 parted -s "$DISK_DEV" resizepart "$PART_NUM" 100%
 
-# Inform the kernel of the updated partition table
 partprobe "$DISK_DEV" 2>/dev/null || true
 udevadm settle
 

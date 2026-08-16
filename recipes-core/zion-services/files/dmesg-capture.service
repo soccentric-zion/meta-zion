@@ -1,0 +1,13 @@
+[Unit]
+Description=Capture kernel ring buffer to the journal
+DefaultDependencies=no
+After=local-fs.target systemd-journald.service
+Before=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'dmesg --color=never --since=@0 | systemd-cat -t dmesg-boot -p info'
+
+[Install]
+WantedBy=multi-user.target

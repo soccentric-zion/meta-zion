@@ -1,0 +1,14 @@
+[Unit]
+Description=Initialise /home on first boot (persistent home partition)
+Documentation=file:///usr/lib/zion-data-init/zion-data-init.sh
+After=local-fs.target
+RequiresMountsFor=/home
+Before=getty.target sshd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/zion-data-init/zion-data-init.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

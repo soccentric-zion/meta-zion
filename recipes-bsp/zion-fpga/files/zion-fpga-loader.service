@@ -1,0 +1,13 @@
+[Unit]
+Description=Load Zion PL bitstream via fpga_manager, if present
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/zion-fpga-loader.sh
+
+[Install]
+WantedBy=sysinit.target

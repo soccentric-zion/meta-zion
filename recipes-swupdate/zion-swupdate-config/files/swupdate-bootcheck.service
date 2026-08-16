@@ -1,0 +1,13 @@
+[Unit]
+Description=SWUpdate boot health check — confirm OTA slot or trigger rollback
+After=local-fs.target
+Before=network.target network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/swupdate/swupdate-bootcheck.sh
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

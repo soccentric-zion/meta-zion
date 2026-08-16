@@ -1,0 +1,14 @@
+[Unit]
+Description=Reset U-Boot bootcount after successful boot (OTA rollback confirmation)
+After=local-fs.target swupdate-bootcheck.service
+Before=network-online.target
+Wants=swupdate-bootcheck.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/swupdate/bootcount-reset.sh
+TimeoutStartSec=30
+
+[Install]
+WantedBy=multi-user.target

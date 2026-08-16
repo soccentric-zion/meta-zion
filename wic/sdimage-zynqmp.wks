@@ -1,26 +1,24 @@
-# sdimage-zynqmp.wks — SD card image layout for KR260 / ZynqMP
+# Zynq UltraScale+ KR260 SD card image — A/B OTA layout
 #
-# Partition layout:
-#   p1  /boot       FAT32   256 MiB  — BOOT.BIN, Image, DTB
-#   p2  rootfs-a    ext4    8 GiB    — A-slot root filesystem
-#   p3  rootfs-b    ext4    8 GiB    — B-slot root filesystem (blank at first flash)
-#   p4  /home       ext4    512 MiB  — Persistent home; expanded on first boot
-#                                      by kr260-home-init.service
+# p1  /boot    512 MB   FAT32   BOOT.BIN, Image, DTB, extlinux
+# p2  /        8192 MB  ext4    rootfs-a  (active slot, populated at build time)
+# p3  <none>   8192 MB  ext4    rootfs-b  (standby slot, written by SWUpdate)
+# p4  /home    512 MB → grows to fill card on first boot via zion-data-init
 #
-# Notes:
-#   • The KR260 microSD is typically /dev/mmcblk1; internal eMMC is mmcblk0.
-#   • BOOT.BIN wraps FSBL + PMU firmware + TF-A + U-Boot.
-#   • U-Boot A/B slot selection is done via fw_setenv (libubootenv-bin).
-#   • SWUpdate updates p2 or p3 in-place; pre/post-install.sh manage the slot.
+# p4 is mounted at /home so user home directories (e.g. /home/zion) persist
+# across OTA updates. On first boot, zion-data-init.service creates /home/zion
+# because the fresh empty partition hides the in-rootfs skeleton copy.
+#
+# SWUpdate writes the new rootfs to the inactive slot (p2 or p3) and
+# updates the U-Boot environment / extlinux.conf to point root= at the
+# new PARTUUID. On the next reboot the updated slot becomes active.
 
-part /boot --source bootimg-partition --ondisk mmcblk1 --fstype=vfat \
-    --label boot --active --align 4 --size 256
+part /boot --source bootimg-partition --ondisk mmcblk0 --fstype=vfat --label boot --active --align 4096 --fixed-size 512M
 
-part / --source rootfs --ondisk mmcblk1 --fstype=ext4 \
-    --label rootfs-a --align 4 --size 8192
+part / --source rootfs --ondisk mmcblk0 --fstype=ext4 --label rootfs-a --align 4096 --fixed-size 8192M
 
-part --ondisk mmcblk1 --fstype=ext4 \
-    --label rootfs-b --align 4 --size 8192
+part --source empty --ondisk mmcblk0 --fstype=ext4 --label rootfs-b --align 4096 --fixed-size 8192M
 
-part /home --ondisk mmcblk1 --fstype=ext4 \
-    --label home --align 4 --size 512
+# p4 is created at 512 MB here so the .wic image stays small.
+# zion-data-init.service expands it to fill the actual card on first boot.
+part /home --source empty --ondisk mmcblk0 --fstype=ext4 --label home --align 4096 --fixed-size 512M

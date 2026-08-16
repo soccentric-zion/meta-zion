@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic disk usage check timer
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Unit=disk-usage-check.service
+
+[Install]
+WantedBy=timers.target

@@ -1,6 +1,5 @@
 [Unit]
 Description=Expand root filesystem to fill SD card
-# Run early, before most services start, but after the root fs is mounted rw.
 DefaultDependencies=no
 After=local-fs.target
 Before=sysinit.target

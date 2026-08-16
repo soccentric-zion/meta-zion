@@ -1,0 +1,14 @@
+[Unit]
+Description=Boot watchdog — decrement OTA try counter and rollback if exhausted
+DefaultDependencies=no
+After=local-fs.target
+Before=basic.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/boot-watchdog.sh
+TimeoutStartSec=60
+
+[Install]
+WantedBy=sysinit.target

@@ -1,24 +1,24 @@
 software =
-    {
-        version = "@@VERSION@@";
-        hardware- compatibility =["1.0"];
+{
+    version = "@@VERSION@@";
+    hardware-compatibility =["1.0"];
+    signing = "RSA";
 
 /*
- * KR260 — A/B rootfs OTA update
+ * Zynq UltraScale+ KR260 — A/B rootfs OTA update
  *
  * Workflow:
- *   1. pre-install.sh  identifies the inactive slot using partition labels
- *      (rootfs-a / rootfs-b) and creates /dev/swupdate-inactive symlink.
- *   2. The "raw" handler streams rootfs.ext4.gz onto that device.
- *   3. post-install.sh calls fw_setenv to set bootslot=<new> and
- *      upgrade_available=1 so U-Boot boots the new slot on next reboot.
- *   4. SWUpdate triggers `reboot` via postupdatecmd in swupdate.cfg.
- *   5. On next boot swupdate-bootcheck.service sets upgrade_available=0
- *      to confirm the upgrade (prevents U-Boot rollback).
- *
- * To deliver the update:
- *   • Web UI  : http://<device-ip>:8080  (drag-and-drop .swu)
- *   • CLI push: swupdate-client -v <device-ip> zion-<version>.swu
+ *   1. pre-install.sh  identifies the inactive slot, creates
+ *      /dev/swupdate-inactive symlink, and backs up current kernel
+ *      and DTB to *.prev for rollback.
+ *   2. The "raw" handler streams rootfs.ext4.gz → inactive slot.
+ *   3. Image and the DTB are written to /boot/.
+ *   4. post-install.sh updates /boot/extlinux/extlinux.conf,
+ *      writes /boot/boot_state (tries_remaining=3, confirmed=false),
+ *      and backs up extlinux.conf.prev.
+ *   5. SWUpdate triggers `reboot` via postupdatecmd.
+ *   On next boot: boot-watchdog.sh decrements tries_remaining.
+ *   After apps are healthy: swupdate-bootcheck.sh writes confirmed=true.
  */
 
 images: (
@@ -27,6 +27,16 @@ images: (
         type       = "raw";
         device     = "/dev/swupdate-inactive";
         compressed = "zlib";
+    },
+    {
+        filename = "@@KERNEL@@";
+        type     = "rawfile";
+        path     = "/boot/@@KERNEL@@";
+    },
+    {
+        filename = "@@DTB@@";
+        type     = "rawfile";
+        path     = "/boot/@@DTB@@";
     }
 );
 

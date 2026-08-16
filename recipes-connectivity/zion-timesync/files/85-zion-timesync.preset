@@ -1,0 +1,7 @@
+[Unit]
+Description=Enable systemd-timesyncd and point at NTP pools
+DefaultDependencies=no
+Before=systemd-timesyncd.service
+
+[Install]
+WantedBy=sysinit.target

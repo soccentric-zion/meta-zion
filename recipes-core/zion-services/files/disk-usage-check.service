@@ -1,0 +1,10 @@
+[Unit]
+Description=Disk usage check — warn when filesystems exceed 80%%
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/disk-usage-check.sh
+
+[Install]
+WantedBy=multi-user.target

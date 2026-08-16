@@ -14,9 +14,6 @@ inherit systemd
 SYSTEMD_SERVICE:${PN} = "expand-rootfs.service"
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
-# parted  : resize the partition table entry
-# e2fsprogs-resize2fs : grow the live ext4 filesystem
-# util-linux : findmnt, partprobe, udevadm already pulled in by base image
 RDEPENDS:${PN} = "bash parted e2fsprogs-resize2fs util-linux"
 
 do_install() {

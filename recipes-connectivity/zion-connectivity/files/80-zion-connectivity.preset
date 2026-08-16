@@ -1,0 +1,4 @@
+enable systemd-networkd.service
+enable systemd-resolved.service
+enable wpa_supplicant@wlan0.service
+enable bluetooth.service

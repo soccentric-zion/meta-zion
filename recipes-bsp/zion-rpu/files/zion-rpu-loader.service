@@ -1,0 +1,13 @@
+[Unit]
+Description=Load Zion RPU (Cortex-R5F) firmware via remoteproc, if present
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/zion-rpu-loader.sh
+
+[Install]
+WantedBy=sysinit.target
