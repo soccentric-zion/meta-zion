@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for test-measurement
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for test & measurement: data acquisition, IIO, analysis
+IMAGE_INSTALL:append = " \
+    libiio sqlite3 \
+    python3-numpy python3-pandas \
+"

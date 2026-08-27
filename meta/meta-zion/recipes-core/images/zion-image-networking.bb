@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for networking
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for networking: firewall, VPN, diagnostics
+IMAGE_INSTALL:append = " \
+    iptables tcpdump nmap \
+    strongswan openvpn wireguard-tools \
+"

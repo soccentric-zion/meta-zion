@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for energy
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for energy: SCADA/Modbus, MQTT, local DB
+IMAGE_INSTALL:append = " \
+    libmodbus mosquitto python3-paho-mqtt \
+    sqlite3 \
+"

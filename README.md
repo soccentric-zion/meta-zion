@@ -1,7 +1,7 @@
 # Zion-OS
 
 Yocto-based embedded Linux OS for the AMD Xilinx Zynq UltraScale+ MPSoC platform.
-Default target board: **KR260** (Kria KR260 Robotics Starter Kit).
+Default target board: **KV260** (Kria KV260 Vision AI Starter Kit).
 
 Built with [kas](https://kas.readthedocs.io/) against the Xilinx `rel-v2025.2` layer set.
 Supports A/B OTA updates via [swupdate](https://sbabic.github.io/swupdate/).
@@ -31,7 +31,8 @@ Zion-OS
 ├── kas/
 │   ├── common.yaml          # Shared Yocto config (distro, image, caches)
 │   ├── boards/
-│   │   └── kr260.yaml       # KR260 machine config (default)
+│   │   ├── kv260.yaml      # KV260 machine config (default)
+│   │   └── kr260.yaml      # KR260 machine config
 │   └── repos/
 │       ├── poky.yaml              # Xilinx fork of poky (rel-v2025.2)
 │       ├── meta-openembedded.yaml # Xilinx fork of OE (rel-v2025.2)
@@ -47,13 +48,13 @@ Zion-OS
 └── Makefile       # Top-level build orchestration
 ```
 
-**Boot flow on KR260:**
+**Boot flow on KV260:**
 ```
 SD/QSPI → FSBL (First Stage Boot Loader)
         → PMU Firmware
         → ATF (Arm Trusted Firmware / TF-A)
         → U-Boot
-        → Linux (Image + zynqmp-smk-k26-revA-sck-kr-g-revB.dtb)
+        → Linux (Image + zynqmp-smk-k26-revA-sck-kv-g-revB.dtb)
         → systemd → Zion-HAL, Zion-Client
 ```
 
@@ -101,11 +102,11 @@ cd Zion-OS
 # 2. Build the KAS Docker image (once)
 make kas-image
 
-# 3. Build the Yocto image for KR260 (default board)
+# 3. Build the Yocto image for KV260 (default board)
 make image
 
 # Build artifacts land in:
-#   deploy/images/kr260_<timestamp>/  ← .wic.bz2 + .wic.bmap
+#   deploy/images/kv260_<timestamp>/  ← .wic.bz2 + .wic.bmap
 ```
 
 Tab completion (optional):
@@ -121,7 +122,8 @@ source ~/.bashrc
 
 | Board name | MACHINE           | SoC                          |
 |------------|-------------------|------------------------------|
-| `kr260`    | `kr260-robotics`  | Zynq UltraScale+ XCZU5EV     |
+| `kv260`    | `k26-smk-kv-sdt`  | Zynq UltraScale+ XCZU5EV     |
+| `kr260`    | `k26-smk-kr-sdt`  | Zynq UltraScale+ XCZU5EV     |
 
 Add more boards by creating `kas/boards/<name>.yaml` (see [Adding a New Board](#adding-a-new-board)).
 
@@ -130,14 +132,14 @@ Add more boards by creating `kas/boards/<name>.yaml` (see [Adding a New Board](#
 ## Build Targets
 
 ```
-make image  kr260          Build Yocto SD card image (default board: kr260)
-make build  kr260          Alias for image
-make rebuild-image kr260   cleansstate image recipe, then rebuild
-make sdk    kr260          Cross-toolchain SDK installer → deploy/sdk/
-make esdk   kr260          Extensible SDK installer     → deploy/esdk/
-make shell  kr260          Interactive kas shell in the build container
+make image  kv260          Build Yocto SD card image (default board: kv260)
+make build  kv260          Alias for image
+make rebuild-image kv260   cleansstate image recipe, then rebuild
+make sdk    kv260          Cross-toolchain SDK installer → deploy/sdk/
+make esdk   kv260          Extensible SDK installer     → deploy/esdk/
+make shell  kv260          Interactive kas shell in the build container
 make swu                   Build .swu OTA package       → deploy/swu/
-make flash  kr260 DEVICE=/dev/sdX   Flash image to SD card
+make flash  kv260 DEVICE=/dev/sdX   Flash image to SD card
 
 # Override image version for OTA package:
 make swu SWU_VERSION=1.2.3
@@ -186,7 +188,7 @@ After a successful update, U-Boot boots the new slot. The health-check service
 ## Flash to SD Card
 
 ```bash
-make flash kr260 DEVICE=/dev/sdX
+make flash kv260 DEVICE=/dev/sdX
 # Uses bmaptool for fast, verified write.
 ```
 
@@ -198,15 +200,15 @@ lsblk -d -o NAME,SIZE,MODEL
 
 ---
 
-## KR260 Boot & Flash Instructions
+## KV260 Boot & Flash Instructions
 
 ### Initial SD card setup
 
-1. Build the image: `make image kr260`
-2. Flash: `make flash kr260 DEVICE=/dev/sdX`
-3. Insert the SD card into the KR260 microSD slot.
-4. Set the boot mode jumper on KR260 to SD card boot (SW1: `1100` — check the KR260 Rev1 board user guide).
-5. Connect a USB-UART cable to the KR260 UART0/USB port (J4).
+1. Build the image: `make image kv260`
+2. Flash: `make flash kv260 DEVICE=/dev/sdX`
+3. Insert the SD card into the KV260 microSD slot.
+4. Set the boot mode jumper on KV260 to SD card boot (SW1: `1100` — check the KV260 Rev1 board user guide).
+5. Connect a USB-UART cable to the KV260 UART0/USB port (J4).
 6. Open a serial terminal at **115200 8N1** (e.g. `minicom -D /dev/ttyUSB1 -b 115200`).
 7. Power on; U-Boot and Linux boot messages appear on UART0.
 8. Default login: configured by `meta-zion` (key-based SSH only; see layer README).

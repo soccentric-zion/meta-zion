@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for maritime
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for maritime: GNSS/navigation, time sync, telemetry
+IMAGE_INSTALL:append = " \
+    gpsd chrony \
+    python3-numpy \
+"

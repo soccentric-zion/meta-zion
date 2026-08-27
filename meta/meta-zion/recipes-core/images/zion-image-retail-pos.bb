@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for retail-pos
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for retail/POS: display, camera/barcode, imaging
+IMAGE_INSTALL:append = " \
+    gstreamer1.0-plugins-good v4l-utils \
+    python3-pillow \
+"

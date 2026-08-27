@@ -1,4 +1,4 @@
-SUMMARY = "Zion OS — production image for AMD Xilinx Zynq UltraScale+ MPSoC (KR260)"
+SUMMARY = "Zion OS — production image for AMD Xilinx Zynq UltraScale+ MPSoC (KV260 / KR260)"
 DESCRIPTION = "Full image with A/B OTA, gRPC/Protobuf, Zion-HAL, \
                hardware interface tooling, and connectivity."
 HOMEPAGE = "https://github.com/SiliconCentric/Zion-OS"
@@ -12,9 +12,9 @@ IMAGE_FEATURES += "ssh-server-openssh"
 
 # OTA / swupdate
 # zion-swupdate-config implements the inactive-slot, boot-selection, and
-# rollback flow for sdimage-zynqmp.wks. Install only on the KR260 machine
-# (and any future A/B machine).
-IMAGE_INSTALL:append:kr260-robotics = " swupdate swupdate-www zion-swupdate-config"
+# rollback flow for sdimage-zynqmp.wks. Install on all K26 A/B machines
+# (KV260 and KR260 both use the k26-smk machine override).
+IMAGE_INSTALL:append:k26-smk = " swupdate swupdate-www zion-swupdate-config"
 
 # Home partition init (persistent /home on the data partition)
 IMAGE_INSTALL:append = " zion-data-init"
@@ -45,6 +45,27 @@ IMAGE_INSTALL:append = " \
     lshw ethtool devmem2 cpupower watchdog sysstat iotop strace \
     v4l-utils evtest python3-periphery vim \
 "
+
+# Vision AI / multimedia stack (KV260 Vision AI Starter Kit)
+# The KV260 machine config (k26-smk-kv-sdt) already enables the Mali-400 GPU
+# (mali400), the Video Codec Unit (vcu), FPGA overlay support (fpga-overlay),
+# and hardware codecs (hwcodecs / libvcu-omxil). This adds the GStreamer
+# pipeline + VCU OMX plugins so those features are usable on the image.
+IMAGE_INSTALL:append:k26-smk = " packagegroup-xilinx-gstreamer"
+
+# FPGA overlay / bitstream loading (Dynamic Function eXchange)
+# fpga-manager-script — fpgautil: load/unload bitstreams via kernel fpga-manager
+# dfx-mgr   — Dynamic Function eXchange manager daemon + fw-load service
+# xmutil    — Kria overlay management tool (load/unload/list overlays)
+# These provide the runtime mechanism to load FPGA bitstreams (overlays) onto
+# the PL fabric without rebooting.
+IMAGE_INSTALL:append:k26-smk = " fpga-manager-script dfx-mgr xmutil"
+
+# RPU (Cortex-R5) firmware lifecycle management via OpenAMP / remoteproc
+# packagegroup-openamp provides libmetal, open-amp, rpmsg tools and the
+# remoteproc kernel modules needed to load/start/stop R5 firmware at runtime.
+# zion-rpu-firmware adds the lifecycle management service (see below).
+IMAGE_INSTALL:append:k26-smk = " packagegroup-openamp zion-rpu-firmware"
 
 # Zion stack
 IMAGE_INSTALL:append = " zion-hal zion-services"
