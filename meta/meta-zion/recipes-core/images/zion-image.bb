@@ -80,8 +80,20 @@ IMAGE_FEATURES += "ptest-pkgs"
 # Operator account — username: zion, password: zion (TTY + SSH login)
 # The data partition (/home) is created by zion-data-init on first boot,
 # so use -M (--no-create-home) like the Acadia reference.
+# NOTE: EXTRA_USERS_PARAMS values are expanded through several layers of
+# shell (the set_user_group function and again inside `flock -c "..."`), so
+# a shadow hash would get mangled. Instead create the user here and set the
+# password directly in /etc/shadow afterwards (single controlled expansion).
+# Hash is sha512crypt("zion", salt="zion"), i.e. login zion/zion.
 inherit extrausers
-EXTRA_USERS_PARAMS = "\
-    useradd -M -s /bin/bash -G sudo zion; \
-    echo 'zion:zion' | chpasswd; \
-"
+EXTRA_USERS_PARAMS = "useradd -M -s /bin/bash -G sudo zion"
+
+ZION_SHADOW_HASH = '$6$zion$p2QLWg13mOPq.YMllRmpv6V4BjAlcfSBN87wHMUS5Be11BI7O2s0S0AYYoPKBIyZAcnZuPcYYOOw/Trchoq87/'
+
+zion_user_password () {
+    grep -q "^zion:" ${IMAGE_ROOTFS}/etc/passwd || return 0
+    h='${ZION_SHADOW_HASH}'
+    sed -ri "s|^zion:[^:]*:.*|zion:${h}:0:99999:7:::|" ${IMAGE_ROOTFS}/etc/shadow
+    bbnote "Set shadow password for user zion"
+}
+ROOTFS_POSTPROCESS_COMMAND:append = " zion_user_password"
