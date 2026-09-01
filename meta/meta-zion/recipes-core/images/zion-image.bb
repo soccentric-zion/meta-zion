@@ -77,11 +77,11 @@ IMAGE_INSTALL:append = " gdbserver perf trace-cmd valgrind"
 # Ptest package and runner support
 IMAGE_FEATURES += "ptest-pkgs"
 
-# Operator account — locked, SSH-key access only
+# Operator account — username: zion, password: zion (TTY + SSH login)
 # The data partition (/home) is created by zion-data-init on first boot,
 # so use -M (--no-create-home) like the Acadia reference.
 inherit extrausers
 EXTRA_USERS_PARAMS = "\
     useradd -M -s /bin/bash -G sudo zion; \
-    usermod -L zion; \
+    echo 'zion:zion' | chpasswd; \
 "
