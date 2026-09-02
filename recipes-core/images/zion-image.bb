@@ -4,9 +4,8 @@ DESCRIPTION = "Full image with A/B OTA, gRPC/Protobuf, Zion-HAL, \
 HOMEPAGE = "https://github.com/SiliconCentric/Zion-OS"
 LICENSE = "MIT"
 
-# Every Zion device identifies itself as "zion": /etc/hostname, the
-# DHCP host-name option and SWUpdate's identify block all use this name.
-hostname:pn-base-files = "zion"
+# The device hostname is set to "zion" in recipes-core/base-files/base-files_%.bbappend
+# (recipe-scope: an image-recipe assignment cannot reach base-files' datastore).
 
 # Base on core-image-full-cmdline (provides bash, sshd-openssh,
 # package-management, base IMAGE_INSTALL framework). This is the canonical
