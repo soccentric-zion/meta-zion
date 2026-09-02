@@ -7,5 +7,8 @@ machine: k26-smk-kr-sdt
 
 local_conf_header:
   wks: |
-    # A/B OTA partition layout for Zynq UltraScale+ (see meta-zion/wic/sdimage-zynqmp.wks)
-    WKS_FILE = "sdimage-zynqmp.wks"
+    # A/B OTA partition layout for Zynq UltraScale+ (meta-zion/wic/sdimage-zynqmp.wks)
+    # WKS_FILES (not WKS_FILE) must be used: meta-xilinx's machine-xilinx-default.inc
+    # sets WKS_FILES ?= "xilinx-default-sd.wks" at machine level, which would
+    # otherwise silently override a plain WKS_FILE assignment.
+    WKS_FILES = "sdimage-zynqmp.wks xilinx-default-sd.wks"

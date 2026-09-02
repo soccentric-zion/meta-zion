@@ -10,6 +10,11 @@
 
 set -euo pipefail
 
+# Files shared between both slots in the boot partition. They are backed up
+# before the OTA overwrites them and restored on rollback by the boot
+# watchdog / bootcheck scripts.
+BOOT_FILES="Image system.dtb"
+
 ACTIVE_DEV=$(findmnt -n -o SOURCE /)
 echo "[swupdate pre-install] active root: ${ACTIVE_DEV}"
 
@@ -39,9 +44,10 @@ fi
 
 echo "[swupdate pre-install] target slot: ${INACTIVE_SLOT} (${INACTIVE_DEV})"
 
-# Backup kernel and DTB so boot-watchdog / bootcheck can restore them on rollback
+# Backup kernel and DTB so boot-watchdog / bootcheck can restore them on
+# rollback (both slots share the kernel/DTB files in the boot partition).
 mount -o remount,rw /boot
-for f in Image zynqmp-smk-k26-revA-sck-kr-g-revB.dtb; do
+for f in ${BOOT_FILES}; do
     if [[ -f "/boot/${f}" ]]; then
         cp "/boot/${f}" "/boot/${f}.prev"
         echo "[swupdate pre-install] backed up /boot/${f}"

@@ -4,10 +4,15 @@
 # Runs after local-fs.target (before network.target) to ensure the health
 # check completes BEFORE network services start. If the health check fails,
 # the system rolls back before any network exposure.
+#
+# On success it confirms the slot by writing /boot/boot_ok — the U-Boot
+# script consumes that marker on the next boot and clears the rollback
+# boot counter.
 
 set -euo pipefail
 
 BOOT_STATE=/boot/boot_state
+BOOT_FILES="Image system.dtb"
 
 if [[ ! -f "${BOOT_STATE}" ]]; then
     exit 0
@@ -41,7 +46,7 @@ fi
 
 # Verify kernel/DTB files are intact
 if [[ "${HEALTH_OK}" == "true" ]]; then
-    for f in Image zynqmp-smk-k26-revA-sck-kr-g-revB.dtb; do
+    for f in ${BOOT_FILES}; do
         if [[ ! -f "/boot/${f}" ]]; then
             HEALTH_OK=false
             logger -t swupdate-bootcheck "${f} missing after boot"
@@ -70,19 +75,19 @@ fi
 if [[ "${HEALTH_OK}" == "true" ]]; then
     mount -o remount,rw /boot
     sed -i 's/confirmed=false/confirmed=true/' "${BOOT_STATE}"
+    # Confirm for the U-Boot rollback counter: boot.cmd.zion consumes this
+    # marker on the next boot and clears upgrade_pending + bootcount.
+    touch /boot/boot_ok
     mount -o remount,ro /boot
     logger -t swupdate-bootcheck "Slot ${slot} confirmed healthy"
 else
     logger -t swupdate-bootcheck "Slot ${slot} unhealthy — rolling back"
     mount -o remount,rw /boot
-    if [[ -f /boot/extlinux/extlinux.conf.prev ]]; then
-        cp /boot/extlinux/extlinux.conf.prev /boot/extlinux/extlinux.conf
-    fi
-    for f in Image zynqmp-smk-k26-revA-sck-kr-g-revB.dtb; do
+    for f in ${BOOT_FILES}; do
         [[ -f "/boot/${f}.prev" ]] && cp "/boot/${f}.prev" "/boot/${f}" || true
+        rm -f "/boot/${f}.prev"
     done
-    rm -f "${BOOT_STATE}" /boot/extlinux/extlinux.conf.prev \
-          /boot/Image.prev /boot/zynqmp-smk-k26-revA-sck-kr-g-revB.dtb.prev
+    rm -f /boot/slot_b /boot/upgrade_pending "${BOOT_STATE}"
     mount -o remount,ro /boot
     reboot
 fi

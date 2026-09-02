@@ -17,10 +17,10 @@ IMAGE_FEATURES += "ssh-server-openssh"
 IMAGE_INSTALL:append:k26-smk = " swupdate swupdate-www zion-swupdate-config"
 
 # Home partition init (persistent /home on the data partition)
+# NOTE: expand-rootfs must NOT be installed in the A/B OTA layout — the
+# rootfs slots are fixed-size (rootfs-a/rootfs-b) and a resized active slot
+# would overlap the standby slot.
 IMAGE_INSTALL:append = " zion-data-init"
-
-# Root filesystem expansion (single-partition deployments)
-IMAGE_INSTALL:append = " expand-rootfs"
 
 # Connectivity
 IMAGE_INSTALL:append = " \
@@ -88,12 +88,36 @@ IMAGE_FEATURES += "ptest-pkgs"
 inherit extrausers
 EXTRA_USERS_PARAMS = "useradd -M -s /bin/bash -G sudo zion"
 
+# Shadow hash of "zion" (salt "zion"), precomputed so the rootfs postprocess
+# below needs no shell command substitution (BitBake's shell parser chokes on
+# $(...) inside ROOTFS_POSTPROCESS_COMMAND bodies).
 ZION_SHADOW_HASH = '$6$zion$p2QLWg13mOPq.YMllRmpv6V4BjAlcfSBN87wHMUS5Be11BI7O2s0S0AYYoPKBIyZAcnZuPcYYOOw/Trchoq87/'
+
+# "Day of last password change" for /etc/shadow, in days since 1970-01-01
+# (2024-09-27). Any fixed non-zero day in the past works: with min=0 and
+# max=99999 the password never expires and is never forced to change.
+ZION_LASTCHG = "20000"
 
 zion_user_password () {
     grep -q "^zion:" ${IMAGE_ROOTFS}/etc/passwd || return 0
     h='${ZION_SHADOW_HASH}'
-    sed -ri "s|^zion:[^:]*:.*|zion:${h}:0:99999:7:::|" ${IMAGE_ROOTFS}/etc/shadow
+    # Fields after the hash: lastchg:min:max:warn:inact:expire:flag.
+    # lastchg MUST be non-zero — 0 means "change password at next login"
+    # (pam_unix/sshd then reject the password and force a change loop).
+    sed -ri "s|^zion:[^:]*:.*|zion:${h}:${ZION_LASTCHG}:0:99999:7:::|" ${IMAGE_ROOTFS}/etc/shadow
     bbnote "Set shadow password for user zion"
 }
 ROOTFS_POSTPROCESS_COMMAND:append = " zion_user_password"
+
+# Mount the FAT boot partition (p1, label 'boot') and the persistent data
+# partition (p4, label 'home') — both created at build time by the meta-zion
+# wic plugins. p4 (home) is grown to fill the card on first boot by
+# zion-data-init. LABEL= is used (never /dev/ names) so the same image works
+# on KV260 (SD = mmcblk1) and KR260 (SD = sda via USB bridge).
+zion_fstab_ab () {
+    grep -q "LABEL=boot" ${IMAGE_ROOTFS}/etc/fstab || \
+        echo "LABEL=boot  /boot  vfat  defaults  0  0" >> ${IMAGE_ROOTFS}/etc/fstab
+    grep -q "LABEL=home" ${IMAGE_ROOTFS}/etc/fstab || \
+        echo "LABEL=home  /home  ext4  defaults,nofail  0  2" >> ${IMAGE_ROOTFS}/etc/fstab
+}
+ROOTFS_POSTPROCESS_COMMAND:append = " zion_fstab_ab"

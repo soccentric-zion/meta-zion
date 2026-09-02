@@ -16,6 +16,7 @@ SRC_URI = " \
     file://swupdate-start.sh \
     file://bootcount-reset.sh \
     file://bootcount-reset.service \
+    file://fw_env.config \
     file://swupdate-public.pem \
 "
 
@@ -67,6 +68,10 @@ do_install() {
     install -m 0644 ${WORKDIR}/swupdate-webui.conf \
                     ${D}${systemd_system_unitdir}/swupdate.service.d/webui.conf
 
+    # fw_printenv/fw_setenv config for the U-Boot env in the boot partition
+    install -m 0644 ${WORKDIR}/fw_env.config \
+                    ${D}${sysconfdir}/fw_env.config
+
     # SWUpdate RSA public key for signature verification
     install -m 0644 ${WORKDIR}/swupdate-public.pem \
                     ${D}${sysconfdir}/swupdate/swupdate-public.pem
@@ -74,6 +79,7 @@ do_install() {
 
 FILES:${PN} += " \
     ${sysconfdir}/swupdate/ \
+    ${sysconfdir}/fw_env.config \
     ${libdir}/swupdate/ \
     ${sbindir}/boot-watchdog.sh \
     ${sbindir}/swupdate-start.sh \

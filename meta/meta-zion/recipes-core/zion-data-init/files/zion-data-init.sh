@@ -18,6 +18,12 @@ logger -t zion-data-init "First boot: initialising /home partition."
 
 # Expand p4 (/home) to fill the rest of the SD card
 HOME_DEV=$(findmnt -n -o SOURCE /home)
+ROOT_DEV=$(findmnt -n -o SOURCE /)
+if [[ -z "${HOME_DEV}" || "${HOME_DEV}" == "${ROOT_DEV}" || "${HOME_DEV}" == /dev/root ]]; then
+    logger -t zion-data-init \
+        "ERROR: /home is not a separate partition (source=${HOME_DEV:-none}, root=${ROOT_DEV}) — refusing to resize the root filesystem"
+    exit 1
+fi
 DISK=$(lsblk -ndo PKNAME "/dev/${HOME_DEV##*/}" 2>/dev/null || echo "")
 if [[ -z "${DISK}" ]]; then
     DISK=$(echo "${HOME_DEV}" | sed 's/p\?[0-9]\+$//')

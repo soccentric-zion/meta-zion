@@ -1,0 +1,108 @@
+# Zion A/B OTA boot script for Kria SDT machines (KV260 / KR260)
+#
+# Overrides the stock Xilinx boot.cmd for the Zion machines. Adds:
+#   - A/B rootfs slot selection driven by the /slot_b marker file on the
+#     boot partition (p1): marker present -> rootfs-b (p3), absent -> rootfs-a (p2)
+#   - A firmware-level rollback boot counter (U-Boot env, saveenv): after 3
+#     consecutive unconfirmed boots the marker is removed and slot A boots
+#   - A /boot_ok handshake file, created by userspace (swupdate-bootcheck)
+#     once the new slot is healthy; consumed here on the next boot
+#   - The PMU firmware node close, inherited from the Kria script
+#
+# State files on the boot partition (FAT):
+#   slot_b           boot from rootfs-b instead of rootfs-a
+#   upgrade_pending  an OTA is installed but not yet confirmed
+#   boot_ok          previous boot was confirmed healthy by userspace
+#
+# The state files are plain files: created/removed by SWUpdate scripts and
+# systemd services from Linux, removed by U-Boot (fatrm) at boot time.
+#
+# @@VARS@@ are substituted by u-boot-xlnx-scr.bb at build time.
+#
+################
+
+# Close pmufw node so that linux can't send small fragments to pmufw
+zynqmp pmufw node close
+@@PRE_BOOTENV@@
+
+# Boot partition reference (devtype/devnum/distro_bootpart are set by the
+# distro boot machinery before this script is sourced)
+setenv bootpart "${devtype} ${devnum}:${distro_bootpart}"
+
+# --- firmware-level rollback state machine ----------------------------------
+if test -e ${bootpart} /boot_ok; then
+    # Previous boot confirmed healthy: consume the handshake, clear the
+    # pending-OTA marker and reset the rollback counter.
+    fatrm ${bootpart} /boot_ok
+    fatrm ${bootpart} /upgrade_pending
+    setenv upgrade_available 0
+    setenv bootcount 0
+    saveenv
+fi
+
+if test -e ${bootpart} /upgrade_pending; then
+    # OTA installed but never confirmed: count this boot attempt.
+    setenv upgrade_available 1
+    if test -z "${bootcount}"; then setenv bootcount 0; fi
+    setexpr bootcount ${bootcount} + 1
+    saveenv
+    if test ${bootcount} -ge 3; then
+        echo "!!! Zion OTA: boot limit reached — rolling back to slot A !!!"
+        fatrm ${bootpart} /slot_b
+        fatrm ${bootpart} /upgrade_pending
+        setenv upgrade_available 0
+        setenv bootcount 0
+        saveenv
+    fi
+fi
+
+# --- root device: by boot medium and slot marker -----------------------------
+# KV260 SD  : devtype=mmc -> /dev/mmcblk1pN   (SD1 controller)
+# KR260 SD  : devtype=usb -> /dev/sdaN        (SD card on a USB bridge)
+if test "${devtype}" = "mmc"; then
+    setenv rootbase /dev/mmcblk1
+    setenv rootsep p
+else
+    setenv rootbase /dev/sda
+    setenv rootsep ""
+fi
+if test -e ${bootpart} /slot_b; then
+    setenv rootdev "${rootbase}${rootsep}3"
+else
+    setenv rootdev "${rootbase}${rootsep}2"
+fi
+
+# --- bootargs -----------------------------------------------------------------
+if test "${board_name}" = "${k24_starter}"; then
+    setenv bootargs "earlycon console=ttyPS1,115200 init_fatal_sh=1 cma=512M root=${rootdev} rootwait rw"
+else
+    setenv bootargs "earlycon console=ttyPS1,115200 init_fatal_sh=1 cma=800M root=${rootdev} rootwait rw"
+fi
+
+for boot_target in ${boot_targets};
+do
+echo "Zion boot: trying ${boot_target} (root=${rootdev})"
+if test "${boot_target}" = "mmc0" || test "${boot_target}" = "mmc1" || test "${boot_target}" = "usb0" || test "${boot_target}" = "usb1"; then
+    if test -e ${devtype} ${devnum}:${distro_bootpart} /@@FIT_IMAGE@@; then
+        fatload ${devtype} ${devnum}:${distro_bootpart} @@FIT_IMAGE_LOAD_ADDRESS@@ @@FIT_IMAGE@@;
+        bootm @@FIT_IMAGE_LOAD_ADDRESS@@;
+    fi
+    if test -e ${devtype} ${devnum}:${distro_bootpart} /@@KERNEL_IMAGE@@; then
+        echo "Loading @@KERNEL_IMAGE@@ at @@KERNEL_LOAD_ADDRESS@@"
+        fatload ${devtype} ${devnum}:${distro_bootpart} @@KERNEL_LOAD_ADDRESS@@ @@KERNEL_IMAGE@@;
+    fi
+    if test -e ${devtype} ${devnum}:${distro_bootpart} /system.dtb; then
+        echo "Loading system.dtb at @@DEVICETREE_ADDRESS@@"
+        fatload ${devtype} ${devnum}:${distro_bootpart} @@DEVICETREE_ADDRESS@@ system.dtb;
+        setenv fdtcontroladdr @@DEVICETREE_ADDRESS@@
+    fi
+    if test -e ${devtype} ${devnum}:${distro_bootpart} /devicetree/openamp.dtbo; then
+        echo "Loading and merging openamp.dtbo into device tree"
+        fatload ${devtype} ${devnum}:${distro_bootpart} @@DEVICETREE_OVERLAY_ADDRESS@@ devicetree/openamp.dtbo;
+        fdt addr ${fdtcontroladdr}
+        fdt resize 8192
+        fdt apply @@DEVICETREE_OVERLAY_ADDRESS@@
+    fi
+    @@KERNEL_BOOTCMD@@ @@KERNEL_LOAD_ADDRESS@@ - ${fdtcontroladdr}
+fi
+done

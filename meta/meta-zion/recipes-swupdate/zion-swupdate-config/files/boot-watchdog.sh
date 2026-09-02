@@ -3,13 +3,19 @@
 #
 # Reads /boot/boot_state and:
 #   - If confirmed=true  → nothing to do, slot is healthy.
-#   - If confirmed=false → verify boot health, then decrement
-#     tries_remaining. If tries_remaining reaches 0 → restore
-#     extlinux.conf.prev and reboot.
+#   - If confirmed=false → verify boot health (kernel/DTB integrity), then
+#     decrement tries_remaining. If tries_remaining reaches 0 → restore the
+#     previous kernel/DTB, clear the slot marker and reboot.
+#
+# Slot selection itself is done by boot.cmd.zion (slot_b marker +
+# U-Boot boot counter for kernels that never reach userspace); this
+# watchdog covers "the kernel boots but the system is broken" cases.
 
 set -euo pipefail
 
 BOOT_STATE=/boot/boot_state
+# Kernel/DTB shared by both slots; restored from .prev on rollback
+BOOT_FILES="Image system.dtb"
 
 if [[ ! -f "${BOOT_STATE}" ]]; then
     exit 0
@@ -35,31 +41,19 @@ rollback() {
     echo "[boot-watchdog] $* — rolling back" | tee /dev/console
     logger -t boot-watchdog "$* — rolling back"
     mount -o remount,rw /boot
-    if [[ -f /boot/extlinux/extlinux.conf.prev ]]; then
-        cp /boot/extlinux/extlinux.conf.prev /boot/extlinux/extlinux.conf
-    fi
-    for f in Image zynqmp-smk-k26-revA-sck-kr-g-revB.dtb; do
+    for f in ${BOOT_FILES}; do
         [[ -f "/boot/${f}.prev" ]] && cp "/boot/${f}.prev" "/boot/${f}" || true
+        rm -f "/boot/${f}.prev"
     done
-    rm -f "${BOOT_STATE}" /boot/extlinux/extlinux.conf.prev \
-          /boot/Image.prev /boot/zynqmp-smk-k26-revA-sck-kr-g-revB.dtb.prev
+    # Boot slot A again: clear the slot marker and the pending flag
+    rm -f /boot/slot_b /boot/upgrade_pending "${BOOT_STATE}"
     mount -o remount,ro /boot
     reboot
 }
 
-# Health check 1: kernel command line matches expected slot
-CURRENT_ROOT=$(cat /proc/cmdline | tr ' ' '\n' | grep '^root=PARTUUID=' | head -1)
-EXPECTED_ROOT=$(grep '^root=' /boot/extlinux/extlinux.conf 2>/dev/null | tr -d '\n')
-
-if [[ -z "${EXPECTED_ROOT}" ]]; then
-    logger -t boot-watchdog "WARNING: cannot determine expected root PARTUUID"
-elif [[ "${CURRENT_ROOT}" != "${EXPECTED_ROOT}" ]]; then
-    rollback "cmdline mismatch (expected='${EXPECTED_ROOT}' got='${CURRENT_ROOT}')"
-fi
-
-# Health check 2: kernel + DTB integrity
+# Health check 1: kernel + DTB integrity
 INTEGRITY_OK=true
-for f in Image zynqmp-smk-k26-revA-sck-kr-g-revB.dtb; do
+for f in ${BOOT_FILES}; do
     if [[ ! -f "/boot/${f}" ]]; then
         INTEGRITY_OK=false
         logger -t boot-watchdog "${f} missing after boot"
