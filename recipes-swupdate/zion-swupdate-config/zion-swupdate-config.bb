@@ -17,6 +17,7 @@ SRC_URI = " \
     file://bootcount-reset.sh \
     file://bootcount-reset.service \
     file://fw_env.config \
+    file://60-zion-uboot-env.rules \
     file://swupdate-public.pem \
 "
 
@@ -30,7 +31,7 @@ SYSTEMD_SERVICE:${PN} = " \
 "
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
-RDEPENDS:${PN} = "swupdate bash util-linux openssl libubootenv"
+RDEPENDS:${PN} = "swupdate bash util-linux openssl libubootenv udev"
 
 do_install() {
     # swupdate main config
@@ -68,9 +69,16 @@ do_install() {
     install -m 0644 ${WORKDIR}/swupdate-webui.conf \
                     ${D}${systemd_system_unitdir}/swupdate.service.d/webui.conf
 
-    # fw_printenv/fw_setenv config for the U-Boot env in the boot partition
+    # fw_printenv/fw_setenv config for the U-Boot env in the QSPI
+    # "U-Boot storage variables" partitions (see fw_env.config header)
     install -m 0644 ${WORKDIR}/fw_env.config \
                     ${D}${sysconfdir}/fw_env.config
+
+    # udev rule: stable /dev/zion/uboot-env{,-redund} symlinks from the
+    # QSPI MTD partition names (fw_env.config references these)
+    install -d ${D}${sysconfdir}/udev/rules.d
+    install -m 0644 ${WORKDIR}/60-zion-uboot-env.rules \
+                    ${D}${sysconfdir}/udev/rules.d/60-zion-uboot-env.rules
 
     # SWUpdate RSA public key for signature verification
     install -m 0644 ${WORKDIR}/swupdate-public.pem \
@@ -80,7 +88,8 @@ do_install() {
 FILES:${PN} += " \
     ${sysconfdir}/swupdate/ \
     ${sysconfdir}/fw_env.config \
-    ${libdir}/swupdate/ \
+    ${sysconfdir}/udev/rules.d/60-zion-uboot-env.rules \
+"    ${libdir}/swupdate/ \
     ${sbindir}/boot-watchdog.sh \
     ${sbindir}/swupdate-start.sh \
     ${systemd_system_unitdir}/swupdate-bootcheck.service \

@@ -14,12 +14,15 @@ repo, which pulls this layer in through `kas/repos/meta-zion.yaml`.
 ```
 conf/layer.conf              layer registration (BBFILE_COLLECTIONS meta-zion)
 recipes-bsp/                 zion-hal, Zion U-Boot boot script (A/B slot logic)
-recipes-connectivity/        zion-connectivity, zion-timesync
+recipes-kernel/              linux-xlnx bbappend + kernel config fragment
+                             (zion-base.cfg: spidev, system monitor, TRNG,
+                             NVMe, SPI CAN controllers)
+recipes-connectivity/        zion-connectivity, zion-timesync, openssh
+                             hardening drop-in (root SSH login disabled)
 recipes-core/                zion-image (+ 20 domain variants), zion-data-init,
                              zion-services, packagegroups, systemd config
-recipes-kernel/              kernel config fragments (zion-base.cfg)
-recipes-support/             swupdate signing config, zion-rpu-firmware,
-                             expand-rootfs (single-partition layouts only)
+recipes-support/             zion-rpu-firmware, expand-rootfs
+                             (single-partition layouts only)
 recipes-swupdate/            zion-swupdate-config — runtime A/B OTA scripts,
                              boot watchdog, health check, fw_env config
 scripts/lib/wic/             custom wic source plugins:
@@ -51,10 +54,21 @@ wic/sdimage-zynqmp.wks       4-partition A/B SD card layout:
    (`/boot_ok`); `boot-watchdog.service` restores the previous kernel/DTB and
    clears the marker if the slot is unhealthy.
 
+## U-Boot environment (fw_printenv / fw_setenv)
+
+Kria SOMs always boot from QSPI, and the Zion U-Boot stores its environment
+in the QSPI partitions "U-Boot storage variables" (0x2200000) and "...backup"
+(0x2220000, redundant — survives a power cut mid-write). `fw_env.config`
+points at `/dev/zion/uboot-env` and `/dev/zion/uboot-env-redund`, which
+`60-zion-uboot-env.rules` symlinks from the QSPI MTD partition names so the
+config survives device-tree partition renumbering.
+
 ## Operator account
 
-`zion` / `zion` (TTY + SSH, member of `sudo`). Set in
-`recipes-core/images/zion-image.bb`.
+`zion` / `zion` (TTY + SSH, member of `sudo` and `systemd-journal`). Set in
+`recipes-core/images/zion-image.bb`; SSH policy in
+`recipes-connectivity/openssh/` (root SSH login disabled, password auth for
+the documented operator account only).
 
 ## Local (untracked) signing keys
 

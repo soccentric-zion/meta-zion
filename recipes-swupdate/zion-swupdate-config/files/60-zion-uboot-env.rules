@@ -1,0 +1,12 @@
+# udev rules — stable device symlinks for the Kria QSPI U-Boot environment
+#
+# The U-Boot env lives in two QSPI partitions whose MTD index depends on
+# the device tree partition table (currently /dev/mtd12 and /dev/mtd13 on
+# k26-smk-*-sdt). Symlinking by the partition *name* keeps fw_env.config
+# valid if partitions are ever added or removed.
+#
+#   /dev/zion/uboot-env        -> "U-Boot storage variables"         (0x2200000)
+#   /dev/zion/uboot-env-redund -> "U-Boot storage variables backup"  (0x2220000)
+
+SUBSYSTEM=="mtd", ATTR{name}=="U-Boot storage variables",         SYMLINK+="zion/uboot-env"
+SUBSYSTEM=="mtd", ATTR{name}=="U-Boot storage variables backup",  SYMLINK+="zion/uboot-env-redund"

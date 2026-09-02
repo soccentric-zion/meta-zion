@@ -56,6 +56,12 @@ IMAGE_INSTALL:append = " \
 # pipeline + VCU OMX plugins so those features are usable on the image.
 IMAGE_INSTALL:append:k26-smk = " packagegroup-xilinx-gstreamer"
 
+# Kria SOM monitoring — temperature/voltage/fan speed. The kernel fragment
+# (recipes-kernel/linux) enables the ZynqMP system monitor (XILINX_AMS) and
+# iio-hwmon, so `sensors` reports SOM temperature rails out of the box.
+# meta-kria's fancontrol config manages the KV260/KR260 cooling fan.
+IMAGE_INSTALL:append:k26-smk = " lmsensors-sensors lmsensors-config-kria-fancontrol"
+
 # FPGA overlay / bitstream loading (Dynamic Function eXchange)
 # fpga-manager-script — fpgautil: load/unload bitstreams via kernel fpga-manager
 # dfx-mgr   — Dynamic Function eXchange manager daemon + fw-load service
@@ -88,8 +94,10 @@ IMAGE_FEATURES += "ptest-pkgs"
 # a shadow hash would get mangled. Instead create the user here and set the
 # password directly in /etc/shadow afterwards (single controlled expansion).
 # Hash is sha512crypt("zion", salt="zion"), i.e. login zion/zion.
+# Groups: sudo — operator admin rights; systemd-journal — read access to
+# the full persistent journal (req. R11.4: Zion-Client can forward logs).
 inherit extrausers
-EXTRA_USERS_PARAMS = "useradd -M -s /bin/bash -G sudo zion"
+EXTRA_USERS_PARAMS = "useradd -M -s /bin/bash -G sudo,systemd-journal zion"
 
 # Shadow hash of "zion" (salt "zion"), precomputed so the rootfs postprocess
 # below needs no shell command substitution (BitBake's shell parser chokes on
