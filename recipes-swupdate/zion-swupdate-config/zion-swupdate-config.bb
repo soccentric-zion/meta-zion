@@ -89,7 +89,7 @@ FILES:${PN} += " \
     ${sysconfdir}/swupdate/ \
     ${sysconfdir}/fw_env.config \
     ${sysconfdir}/udev/rules.d/60-zion-uboot-env.rules \
-"    ${libdir}/swupdate/ \
+    ${libdir}/swupdate/ \
     ${sbindir}/boot-watchdog.sh \
     ${sbindir}/swupdate-start.sh \
     ${systemd_system_unitdir}/swupdate-bootcheck.service \
