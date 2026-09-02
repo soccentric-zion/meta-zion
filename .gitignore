@@ -1,39 +1,12 @@
-# ─── Yocto build output ───────────────────────────────────────────────────────
-build/
-sstate-cache/
-downloads/
-
-# ─── KAS artefacts ────────────────────────────────────────────────────────────
-.kas-cache/
-
-# ─── Yocto / BitBake generated files ─────────────────────────────────────────
-# Cloned upstream layers (managed by KAS, never edited by hand)
-layers/
-
-# BitBake lock and pseudo database
-bitbake.lock
-pseudodone
-
-# SDK installers
-deploy/**/*.sh
-
-# Compiled Python
+# Compiled Python (wic plugins etc.)
 *.pyc
 *.pyo
 __pycache__/
 
-# ─── Docker artefacts ─────────────────────────────────────────────────────────
-*.tar
-*.tar.gz
+# SWUpdate signing keys are generated locally and must never be committed
+swupdate/keys/
 
-# ─── SD card images (large) ───────────────────────────────────────────────────
-*.wic
-*.wic.bz2
-*.wic.bmap
-*.img
-*.img.bz2
-
-# ─── Editor / IDE ─────────────────────────────────────────────────────────────
+# Editor / IDE
 .vscode/
 .idea/
 *.swp
@@ -41,21 +14,3 @@ __pycache__/
 *~
 .DS_Store
 Thumbs.db
-
-# ─── Logs ─────────────────────────────────────────────────────────────────────
-*.log
-
-deploy/
-
-# meta/ holds the meta-zion Yocto layer, which historically was
-# committed to this repo before the layer-fetch was wired through
-# kas/repos/. Re-enable tracking here so layer fixes (e.g. the A/B
-# OTA rollback chain) can be reviewed and merged via PR.
-meta/*
-!meta/meta-zion/
-!meta/meta-zion/**
-
-# Host SSH keys used to fetch the private HAL repo during eSDK Docker build
-docker/esdk/ssh/
-
-sstate/
