@@ -1,0 +1,10 @@
+meta-zion
+Copyright (c) 2026 SoCcentric
+
+The recipes, configuration and metadata in this layer are licensed under the
+MIT License (see LICENSE).
+
+Patch files (*.patch, *.diff) are derived from the upstream projects they
+modify and remain under the license of those upstream projects. Software that
+this layer builds or fetches (Linux kernel, U-Boot, BusyBox and others) is
+licensed by its respective authors under its own terms.
