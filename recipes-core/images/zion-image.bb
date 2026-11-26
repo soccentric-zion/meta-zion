@@ -1,7 +1,7 @@
 SUMMARY = "Zion OS — production image for AMD Xilinx Zynq UltraScale+ MPSoC (KV260 / KR260)"
 DESCRIPTION = "Full image with A/B OTA, gRPC/Protobuf, Zion-HAL, \
                hardware interface tooling, and connectivity."
-HOMEPAGE = "https://github.com/SiliconCentric/Zion-OS"
+HOMEPAGE = "https://github.com/soccentric-zion/Zion-OS"
 LICENSE = "MIT"
 
 # The device hostname is set to "zion" in recipes-core/base-files/base-files_%.bbappend
