@@ -1,7 +1,6 @@
 SUMMARY = "SWUpdate runtime configuration and A/B OTA helper scripts for KR260"
 DESCRIPTION = "Installs swupdate.cfg, pre/post-install helper scripts, \
-a boot-check service that confirms successful boot via fw_setenv, \
-and the swupdate web-UI nginx config."
+a boot-check service that confirms successful boot via fw_setenv."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
@@ -11,7 +10,6 @@ SRC_URI = " \
     file://post-install.sh \
     file://swupdate-bootcheck.sh \
     file://swupdate-bootcheck.service \
-    file://swupdate-webui.conf \
     file://fw_env.config \
 "
 
@@ -40,17 +38,11 @@ do_install() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/swupdate-bootcheck.service \
                     ${D}${systemd_system_unitdir}/swupdate-bootcheck.service
-
-    # Nginx/lighttpd web-UI config (swupdate-www)
-    install -d ${D}${sysconfdir}/nginx/conf.d
-    install -m 0644 ${WORKDIR}/swupdate-webui.conf \
-                    ${D}${sysconfdir}/nginx/conf.d/swupdate-webui.conf
 }
 
 FILES:${PN} += " \
     ${sysconfdir}/swupdate.cfg \
     ${sysconfdir}/fw_env.config \
-    ${sysconfdir}/nginx/conf.d/swupdate-webui.conf \
     ${libdir}/kr260-swupdate \
     ${systemd_system_unitdir}/swupdate-bootcheck.service \
 "

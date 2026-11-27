@@ -1,7 +1,6 @@
 # OTA via SWUpdate — A/B rootfs slot switching, web UI on :8080
 IMAGE_INSTALL:append = " \
     swupdate \
-    swupdate-www \
     kr260-swupdate-config \
 "
 

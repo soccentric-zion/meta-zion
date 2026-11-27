@@ -17,7 +17,7 @@ IMAGE_FEATURES += "ssh-server-openssh"
 # zion-swupdate-config implements the inactive-slot, boot-selection, and
 # rollback flow for sdimage-zynqmp.wks. Install on all K26 A/B machines
 # (KV260 and KR260 both use the k26-smk machine override).
-IMAGE_INSTALL:append:k26-smk = " swupdate swupdate-www zion-swupdate-config"
+IMAGE_INSTALL:append:k26-smk = " swupdate zion-swupdate-config"
 
 # Home partition init (persistent /home on the data partition)
 # NOTE: expand-rootfs must NOT be installed in the A/B OTA layout — the
