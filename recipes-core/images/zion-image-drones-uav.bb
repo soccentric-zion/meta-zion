@@ -5,5 +5,9 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for drones-uav
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for drones/UAV: GPS, telemetry, CAN, MQTT
+IMAGE_INSTALL:append = " \
+    gpsd can-utils \
+    mosquitto python3-paho-mqtt \
+    python3-numpy \
+"

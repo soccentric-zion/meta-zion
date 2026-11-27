@@ -1,24 +1,37 @@
-# Zynq UltraScale+ KR260 SD card image — A/B OTA layout
+# Zynq UltraScale+ Kria SD card image — A/B OTA layout
 #
-# p1  /boot    512 MB   FAT32   BOOT.BIN, Image, DTB, extlinux
+# p1  /boot    512 MB   FAT32   BOOT.BIN, Image, system.dtb, boot.scr,
+#                               A/B slot markers (slot_b, upgrade_pending,
+#                               boot_ok) and boot_state — written by SWUpdate
 # p2  /        8192 MB  ext4    rootfs-a  (active slot, populated at build time)
 # p3  <none>   8192 MB  ext4    rootfs-b  (standby slot, written by SWUpdate)
 # p4  /home    512 MB → grows to fill card on first boot via zion-data-init
 #
-# p4 is mounted at /home so user home directories (e.g. /home/zion) persist
-# across OTA updates. On first boot, zion-data-init.service creates /home/zion
-# because the fresh empty partition hides the in-rootfs skeleton copy.
+# rootfs-b and /home are real, labelled filesystems created at BUILD time by
+# the meta-zion 'fslabel' wic plugin (the stock 'empty' plugin produces raw
+# unformatted partitions, which cannot be mounted or found by label).
+# /boot uses the meta-zion 'zion-bootimg' plugin: a copy of bootimg-partition
+# that is compatible with meta-xilinx's wic (rel-v2025.2 passes a
+# sector_size kwarg the stock plugin doesn't accept).
 #
-# SWUpdate writes the new rootfs to the inactive slot (p2 or p3) and
-# updates the U-Boot environment / extlinux.conf to point root= at the
-# new PARTUUID. On the next reboot the updated slot becomes active.
+# p4 is created at 512 MB here so the .wic image stays small.
+# zion-data-init.service expands it to fill the actual card on first boot.
+#
+# SWUpdate writes the new rootfs to the inactive slot (p2 or p3), updates
+# kernel/DTB in p1 and drops a slot marker + boot_state file. The Zion
+# U-Boot script (boot.cmd.zion) selects the slot from the marker on every
+# boot and enforces the rollback boot counter.
 
-part /boot --source bootimg-partition --ondisk mmcblk0 --fstype=vfat --label boot --active --align 4096 --fixed-size 512M
+# p1 is intentionally declared WITHOUT a mountpoint: meta-xilinx's wic
+# writes fstab entries with /dev/sdaN device paths for mounted partitions
+# (wrong for the KV260, whose SD card is mmcblk1). The image recipe's
+# ROOTFS_POSTPROCESS_COMMAND adds proper LABEL= fstab entries instead.
+part --source zion-bootimg --fstype=vfat --label boot --active --align 4096 --fixed-size 512M
 
-part / --source rootfs --ondisk mmcblk0 --fstype=ext4 --label rootfs-a --align 4096 --fixed-size 8192M
+part / --source rootfs --fstype=ext4 --label rootfs-a --align 4096 --fixed-size 8192M
 
-part --source empty --ondisk mmcblk0 --fstype=ext4 --label rootfs-b --align 4096 --fixed-size 8192M
+part --source fslabel --sourceparams="label=rootfs-b" --fstype=ext4 --align 4096 --fixed-size 8192M
 
 # p4 is created at 512 MB here so the .wic image stays small.
 # zion-data-init.service expands it to fill the actual card on first boot.
-part /home --source empty --ondisk mmcblk0 --fstype=ext4 --label home --align 4096 --fixed-size 512M
+part --source fslabel --sourceparams="label=home" --fstype=ext4 --align 4096 --fixed-size 512M

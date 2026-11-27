@@ -1,0 +1,16 @@
+[Unit]
+Description=Zion RPU (Cortex-R5) firmware lifecycle manager
+Documentation=man:zion-rpu-firmware
+After=local-fs.target
+ConditionPathExists=/var/lib/zion-rpu-firmware/autostart
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/zion-rpu-firmware start
+ExecStop=/usr/bin/zion-rpu-firmware stop
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

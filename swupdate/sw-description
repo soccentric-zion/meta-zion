@@ -5,20 +5,29 @@ software =
     signing = "RSA";
 
 /*
- * Zynq UltraScale+ KR260 — A/B rootfs OTA update
+ * Zynq UltraScale+ Kria (KV260 / KR260) — A/B rootfs OTA update
+ *
+ * Partition layout (meta-zion/wic/sdimage-zynqmp.wks):
+ *   p1 /boot  FAT32  BOOT.BIN, Image, system.dtb, boot.scr + A/B markers
+ *   p2        ext4   rootfs-a  (active slot)
+ *   p3        ext4   rootfs-b  (standby slot)
+ *   p4 /home  ext4   persistent data (never touched by OTA)
  *
  * Workflow:
- *   1. pre-install.sh  identifies the inactive slot, creates
- *      /dev/swupdate-inactive symlink, and backs up current kernel
- *      and DTB to *.prev for rollback.
- *   2. The "raw" handler streams rootfs.ext4.gz → inactive slot.
- *   3. Image and the DTB are written to /boot/.
- *   4. post-install.sh updates /boot/extlinux/extlinux.conf,
- *      writes /boot/boot_state (tries_remaining=3, confirmed=false),
- *      and backs up extlinux.conf.prev.
- *   5. SWUpdate triggers `reboot` via postupdatecmd.
- *   On next boot: boot-watchdog.sh decrements tries_remaining.
- *   After apps are healthy: swupdate-bootcheck.sh writes confirmed=true.
+ *   1. pre-install.sh  identifies the inactive slot by partition label,
+ *      creates the /dev/swupdate-inactive symlink, and backs up the
+ *      shared kernel and DTB (/boot/Image, /boot/system.dtb -> *.prev).
+ *   2. The "raw" handler streams rootfs.ext4.gz into the inactive slot.
+ *   3. The new Image and system.dtb are written into /boot/.
+ *   4. post-install.sh sets the /boot/slot_b marker, drops
+ *      /boot/upgrade_pending (arms the U-Boot rollback boot counter in
+ *      boot.cmd.zion) and writes /boot/boot_state (tries_remaining=3).
+ *   5. SWUpdate reboots via postupdatecmd.
+ *
+ * On next boot boot.cmd.zion selects the slot from the marker and counts
+ * unconfirmed boots. After the apps are healthy swupdate-bootcheck.sh
+ * confirms the slot (/boot_ok + confirmed=true); after 3 failed boots the
+ * U-Boot script rolls back to the previous slot automatically.
  */
 
 images: (

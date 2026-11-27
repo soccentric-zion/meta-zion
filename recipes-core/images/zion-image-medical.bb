@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for medical
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for medical: imaging, vision, data processing
+IMAGE_INSTALL:append = " \
+    opencv python3-pillow \
+    python3-numpy \
+"

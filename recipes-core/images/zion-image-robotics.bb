@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for robotics
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for robotics: vision, motion control, CAN, telemetry
+IMAGE_INSTALL:append = " \
+    opencv gstreamer1.0-plugins-good \
+    can-utils python3-numpy \
+"

@@ -1,0 +1,16 @@
+# Compiled Python (wic plugins etc.)
+*.pyc
+*.pyo
+__pycache__/
+
+# SWUpdate signing keys are generated locally and must never be committed
+swupdate/keys/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

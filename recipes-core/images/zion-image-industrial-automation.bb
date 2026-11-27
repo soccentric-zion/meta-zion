@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for industrial-automation
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for industrial automation: Modbus, OPC-UA, MQTT
+IMAGE_INSTALL:append = " \
+    libmodbus open62541 \
+    mosquitto python3-paho-mqtt \
+"

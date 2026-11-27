@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for security-surveillance
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for security/surveillance: video, RTSP, analytics
+IMAGE_INSTALL:append = " \
+    gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-rtsp-server \
+    v4l-utils opencv \
+"

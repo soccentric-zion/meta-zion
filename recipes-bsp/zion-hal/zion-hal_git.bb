@@ -2,13 +2,13 @@ SUMMARY = "Zion Hardware Abstraction Layer"
 DESCRIPTION = "HAL library for the Zion platform (Zynq UltraScale+ MPSoC), \
 providing hardware abstraction interfaces."
 HOMEPAGE = "https://github.com/soccentric-zion/Zion-HAL"
-LICENSE = "CLOSED"
-# Upstream is a private repo; no LICENSE file is shipped. BitBake requires
+LICENSE = "MIT"
+# Upstream is MIT-licensed; BitBake uses the common MIT license text. BitBake requires
 # a LIC_FILES_CHKSUM entry. We point at a stable local file.
-LIC_FILES_CHKSUM = "file://security.md;md5=1606e3c70e7eb33ddfd7fa686c3b5ff0"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 SRC_URI = " \
-    git://github.com/soccentric-zion/Zion-HAL.git;protocol=ssh;user=git;branch=develop \
+    git://github.com/soccentric-zion/Zion-HAL.git;protocol=https;branch=develop \
     file://security.md \
 "
 SRCREV = "a2acd66da1963d4166f2be6eb3ddec63d1ed9845"

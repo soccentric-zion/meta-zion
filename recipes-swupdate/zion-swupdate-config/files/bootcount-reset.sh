@@ -1,42 +1,41 @@
 #!/bin/bash
-# bootcount-reset.sh — U-Boot env OTA rollback confirmation.
+# bootcount-reset.sh — OTA confirmation cleanup after a healthy boot.
 #
-# Runs once after a successful boot as a systemd oneshot service.
-# Sets upgrade_available=0 and bootcount=0 in the U-Boot environment to
-# signal that the current slot is healthy and rollback is not needed.
+# swupdate-bootcheck.sh already drops /boot/boot_ok for the U-Boot script
+# (which consumes it and resets its rollback counter). This service is the
+# belt-and-braces confirmation path: it also clears the U-Boot environment
+# via fw_setenv when /etc/fw_env.config matches the actual U-Boot env
+# storage (failures here are non-fatal — slot state lives in the boot
+# partition markers, not in the env).
 
 set -euo pipefail
 
 FW_SETENV=$(command -v fw_setenv  || true)
 FW_PRINTENV=$(command -v fw_printenv || true)
 
-if [[ -z "${FW_SETENV}" || ! -x "${FW_SETENV}" ]]; then
-    logger -t bootcount-reset "fw_setenv not found in PATH — skipping"
+# Confirm for U-Boot (idempotent with swupdate-bootcheck)
+mount -o remount,rw /boot 2>/dev/null || true
+touch /boot/boot_ok 2>/dev/null || true
+mount -o remount,ro /boot 2>/dev/null || true
+
+if [[ -z "${FW_SETENV}" || ! -x "${FW_SETENV}" || ! -f /etc/fw_env.config ]]; then
+    logger -t bootcount-reset "fw_setenv or /etc/fw_env.config unavailable — boot_ok marker is authoritative"
     exit 0
 fi
 
 CURRENT=$(${FW_PRINTENV:-/bin/true} -n upgrade_available 2>/dev/null || echo "0")
-case "${CURRENT}" in
-    0|"")
-        logger -t bootcount-reset "upgrade_available already '${CURRENT}' — nothing to do"
-        exit 0
-        ;;
-    1)
-        : # expected post-OTA state — proceed to confirm
-        ;;
-    *)
-        logger -t bootcount-reset \
-            "WARNING: upgrade_available='${CURRENT}' is unexpected — clearing anyway"
-        ;;
-esac
+if [[ "${CURRENT}" == "0" || -z "${CURRENT}" ]]; then
+    logger -t bootcount-reset "upgrade_available already '${CURRENT}' — nothing to do"
+    exit 0
+fi
 
 if ! ${FW_SETENV} upgrade_available 0; then
     logger -t bootcount-reset "ERROR: fw_setenv upgrade_available 0 failed"
-    exit 1
+    exit 0
 fi
 if ! ${FW_SETENV} bootcount 0; then
     logger -t bootcount-reset "ERROR: fw_setenv bootcount 0 failed"
-    exit 1
+    exit 0
 fi
 
 logger -t bootcount-reset \

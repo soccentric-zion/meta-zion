@@ -5,5 +5,9 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for automotive
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for automotive: CAN bus, vision/ADAS, telemetry
+IMAGE_INSTALL:append = " \
+    can-utils opencv \
+    gstreamer1.0-plugins-good \
+    python3-numpy \
+"

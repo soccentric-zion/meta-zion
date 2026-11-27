@@ -5,5 +5,8 @@ LICENSE = "MIT"
 require recipes-core/images/zion-image.bb
 require recipes-core/images/zion-image-common.inc
 
-# Domain-specific packages for transportation-rail
-IMAGE_INSTALL:append = "     packagegroup-core-full-cmdline "
+# Domain-specific packages for rail transport: signaling, CAN, GNSS, telemetry
+IMAGE_INSTALL:append = " \
+    can-utils gpsd \
+    mosquitto python3-paho-mqtt \
+"

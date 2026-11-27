@@ -62,15 +62,8 @@ IMAGE_INSTALL:append = " \
 "
 
 # --- Time sync, certs, crypto, entropy ---------------------------------------
-# rng-tools-service is the rngd daemon (separate subpackage from the
-# rng-tools CLI tools already listed here); it feeds /dev/hwrng into the
-# kernel entropy pool via its default /etc/default/rng-tools config
-# (EXTRA_ARGS="-r /dev/hwrng", unmodified upstream default). /dev/hwrng is
-# backed by the ZynqMP hardware TRNG once CONFIG_HW_RANDOM_XILINX_PS is
-# active (see recipes-kernel/linux/files/zion-base.cfg). haveged remains as
-# a software/jitter-entropy source alongside it, not a replacement for it.
 IMAGE_INSTALL:append = " \
-    chrony ca-certificates openssl gnupg gnutls rng-tools rng-tools-service haveged \
+    chrony ca-certificates openssl gnupg gnutls rng-tools haveged \
 "
 
 # --- System monitoring, editors, shells -------------------------------------
@@ -90,16 +83,5 @@ IMAGE_INSTALL:append = " \
     libgpiod i2c-tools spitools libiio \
 "
 
-# --- VCU (video codec) — not applicable on this hardware ---------------------
-# The Kria K26 SOM (used on KR260) does not implement the hardened VCU
-# (H.264/H.265 encode/decode) block present on some larger Zynq
-# UltraScale+ EG/EV parts (e.g. ZCU106/ZCU104). This is a silicon gap, not
-# a missing recipe — no VCU packages are added here.
-
-# --- DisplayPort — SoC-capable, board-not-wired -------------------------------
-# The ZynqMP PS DisplayPort DMA/controller (dppsu/dpdma) is present in
-# MACHINE_FEATURES for this SoC, but the KR260 carrier board does not route
-# a physical DisplayPort connector (it's a headless robotics carrier). No
-# Weston/DRM-KMS display stack is added here as a result — there is
-# nothing to display to. Revisit if targeting a carrier board that exposes
-# DP (e.g. a KV260/KD240 with a DP-capable carrier).
+# --- WebConfig (Zion-Configuration's meta-webconfig layer, kas/repos/zion-configuration.yaml) ---
+IMAGE_INSTALL:append = " webconfigd webconfig-static webconfig-schemas webconfig-manifest"
