@@ -83,5 +83,4 @@ IMAGE_INSTALL:append = " \
     libgpiod i2c-tools spitools libiio \
 "
 
-# --- WebConfig (Zion-Configuration's meta-webconfig layer, kas/repos/zion-configuration.yaml) ---
-IMAGE_INSTALL:append = " webconfigd webconfig-static webconfig-schemas webconfig-manifest"
+# WebConfig web UI intentionally not installed (removed from all OS builds).
